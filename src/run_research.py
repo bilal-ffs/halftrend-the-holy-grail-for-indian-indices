@@ -1,3 +1,8 @@
+import json
+from pathlib import Path
+
+import pandas as pd
+
 from src.backtest import run_backtest
 from src.data import load_minute_data, resample_to_15m
 from src.halftrend import calculate_halftrend
@@ -10,6 +15,8 @@ DATA_PATH = (
     r"C:\Users\beqmd\Documents\QuantResearch"
     r"\data\NIFTY_50_minute.csv"
 )
+
+RESULTS_DIR = Path("results")
 
 
 def run_is_research():
@@ -58,6 +65,52 @@ def run_is_research():
         trade_results=trade_results,
     )
 
+    # --------------------------------------------------------------
+    # Create results directory.
+    # --------------------------------------------------------------
+    RESULTS_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    # --------------------------------------------------------------
+    # Save performance summary.
+    # --------------------------------------------------------------
+    summary_path = RESULTS_DIR / "halftrend_is_summary.json"
+
+    summary_path.write_text(
+        json.dumps(
+            backtest.summary(),
+            indent=4,
+        ),
+        encoding="utf-8",
+    )
+
+    # --------------------------------------------------------------
+    # Save equity curve and periodic returns.
+    # --------------------------------------------------------------
+    equity_output = pd.DataFrame(
+        {
+            "equity": equity,
+            "strategy_return": returns,
+        }
+    )
+
+    equity_output.to_csv(
+        RESULTS_DIR / "halftrend_is_equity.csv"
+    )
+
+    # --------------------------------------------------------------
+    # Save completed trade P&Ls.
+    # --------------------------------------------------------------
+    trade_results.to_csv(
+        RESULTS_DIR / "halftrend_is_trades.csv",
+        index=False,
+    )
+
+    # --------------------------------------------------------------
+    # Console report.
+    # --------------------------------------------------------------
     print()
     print("=" * 60)
     print("HALFTREND — IN-SAMPLE RESEARCH")
@@ -70,9 +123,18 @@ def run_is_research():
     )
 
     print(f"Bars: {len(is_data):,}")
-    print(f"Entries: {int(halftrend['buy_signal'].sum()):,}")
-    print(f"Exits: {int(halftrend['sell_signal'].sum()):,}")
-    print(f"Completed trades: {len(trade_results):,}")
+    print(
+        f"Entries: "
+        f"{int(halftrend['buy_signal'].sum()):,}"
+    )
+    print(
+        f"Exits: "
+        f"{int(halftrend['sell_signal'].sum()):,}"
+    )
+    print(
+        f"Completed trades: "
+        f"{len(trade_results):,}"
+    )
 
     print(
         f"Time in market: "
@@ -92,6 +154,18 @@ def run_is_research():
     print()
     print("Final equity:")
     print(f"₹{equity.iloc[-1]:,.2f}")
+
+    print()
+    print("Saved results:")
+    print(
+        f"  {RESULTS_DIR / 'halftrend_is_summary.json'}"
+    )
+    print(
+        f"  {RESULTS_DIR / 'halftrend_is_equity.csv'}"
+    )
+    print(
+        f"  {RESULTS_DIR / 'halftrend_is_trades.csv'}"
+    )
 
     return backtest
 
