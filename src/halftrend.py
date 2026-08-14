@@ -194,7 +194,7 @@ def calculate_halftrend(
         if i > 0:
             trend[i] = trend[i - 1]
             next_trend[i] = next_trend[i - 1]
-            
+
         # Previous-bar values.
         previous_low = low[i - 1] if i > 0 else low[i]
         previous_high = high[i - 1] if i > 0 else high[i]
@@ -229,7 +229,7 @@ def calculate_halftrend(
 
             if (
                 not np.isnan(high_ma[i])
-                and high_ma[i] < max_low_price[i]
+                and high_ma[i] < max_low_price[i] - 1e-10
                 and close[i] < previous_low
             ):
                 trend[i] = 1
@@ -244,7 +244,7 @@ def calculate_halftrend(
 
             if (
                 not np.isnan(low_ma[i])
-                and low_ma[i] > min_high_price[i]
+                and low_ma[i] > min_high_price[i] + 1e-10
                 and close[i] > previous_high
             ):
                 trend[i] = 0
