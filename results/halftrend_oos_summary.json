@@ -1,0 +1,14 @@
+{
+    "cagr": 0.22560728134610297,
+    "sharpe_ratio": 2.2367275969591627,
+    "sortino_ratio": 2.081166030895829,
+    "calmar_ratio": 0.08593113470255825,
+    "max_drawdown": -0.09141239122492129,
+    "drawdown_duration": 4088,
+    "profit_factor": 1.7482726018363788,
+    "expectancy": 35.14191542288558,
+    "win_rate": 0.4502487562189055,
+    "average_win": 182.35690607734807,
+    "average_loss": 85.42782805429863,
+    "payoff_ratio": 2.1346311878775674
+}
