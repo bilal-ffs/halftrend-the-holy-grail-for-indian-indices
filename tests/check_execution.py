@@ -1,6 +1,7 @@
 from src.data import load_minute_data, resample_to_15m
 from src.halftrend import calculate_halftrend
 from src.trading import generate_long_only_trades
+from src.portfolio import build_equity_curve
 
 
 DATA_PATH = (
@@ -8,43 +9,58 @@ DATA_PATH = (
     r"\data\NIFTY_50_minute.csv"
 )
 
+INITIAL_CAPITAL = 100_000.0
 
 df = load_minute_data(DATA_PATH)
 df15 = resample_to_15m(df).iloc[:1000]
 
 ht = calculate_halftrend(df15)
 
-positions, trades = generate_long_only_trades(ht)
+positions, trade_results = generate_long_only_trades(ht)
+
+equity = build_equity_curve(
+    ht,
+    initial_capital=INITIAL_CAPITAL,
+)
+
+# --------------------------------------------------------------
+# Reconstruct completed-trade compounded equity independently.
+# --------------------------------------------------------------
+
+trade_equity = INITIAL_CAPITAL
 
 in_position = False
-entry_time = None
 entry_price = None
-trade_number = 0
 
-print("Signal → execution check:")
-print()
+completed_trades = 0
 
 for i in range(1, len(ht)):
     if ht["buy_signal"].iloc[i - 1] and not in_position:
-        entry_time = ht.index[i]
-        entry_price = ht["open"].iloc[i]
+        entry_price = float(ht["open"].iloc[i])
         in_position = True
 
     elif ht["sell_signal"].iloc[i - 1] and in_position:
-        trade_number += 1
+        exit_price = float(ht["open"].iloc[i])
 
-        exit_time = ht.index[i]
-        exit_price = ht["open"].iloc[i]
+        trade_return = exit_price / entry_price - 1.0
 
-        pnl = exit_price - entry_price
+        trade_equity *= 1.0 + trade_return
 
-        print(
-            f"Trade {trade_number}: "
-            f"ENTRY {entry_time} @ {entry_price:.2f} | "
-            f"EXIT {exit_time} @ {exit_price:.2f} | "
-            f"P&L {pnl:.2f}"
-        )
+        completed_trades += 1
 
         in_position = False
-        entry_time = None
         entry_price = None
+
+
+print("Portfolio audit")
+print("----------------")
+print(f"Completed trades: {completed_trades}")
+print(f"Trade P&Ls:       {len(trade_results)}")
+print()
+print(f"Equity curve:     {equity.iloc[-1]:.10f}")
+print(f"Trade compounding:{trade_equity:.10f}")
+print()
+print(
+    "Difference:",
+    f"{equity.iloc[-1] - trade_equity:.10f}",
+)
